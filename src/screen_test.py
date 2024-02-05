@@ -8,6 +8,7 @@
 # ---------------------------------------------------------------------------- #
 # Library imports
 from vex import *
+import time
 
 # Brain should be defined by default
 brain=Brain()
@@ -39,18 +40,6 @@ class FlywheelMode:
     LAUNCH = "LAUNCH"
     INTAKE = "INTAKE"
     EXPEL = "EXPEL"
-
-bidding = SmartDrive(
-    BACK_LEFT_DRIVE_MOTOR, # Motor 1
-    BACK_RIGHT_DRIVE_MOTOR, # Motor 2
-    IMU_SENSOR, # Gyro sensor (IMU)
-    WHEEL_TRAVEL, # Wheel travel
-    TRACK_WIDTH, # Track width
-    WHEEL_BASE, # Wheel base
-    MM, # Units
-)
-nmtt = Motor(NMTT_PORT, GearSetting.RATIO_6_1, True) # Never Meant to Throw
-fly_arm = Motor(FLYWHEEL_ARM_MOTOR, GearSetting.RATIO_36_1)
 
 RoE = Controller() # Ruler of Everything
 current_flywheel_mode = FlywheelMode.STOPPED
@@ -89,22 +78,6 @@ def driver_control():
     current_time = time.time()
 
     while True:
-        # Control the sticks
-        rotation = RoE.axis1.value()
-        drive = RoE.axis3.value()
-
-        # Axis 1 control, or rotating the robot
-        if rotation > 10:
-            bidding.turn(RIGHT, rotation, PERCENT)
-        elif rotation < -10:
-            bidding.turn(LEFT, abs(rotation), PERCENT)
- 
-        # Axis 3 control, or moving the robot forward/backward
-        if drive > 10:
-            bidding.drive(FORWARD, drive, PERCENT)
-        elif drive < -10:
-            bidding.drive(REVERSE, abs(drive), PERCENT)
-
         # Only manually control the flywheel if its mode is not LAUNCH
         if not current_flywheel_mode == FlywheelMode.LAUNCH:
             # If L2, or left trigger, is pressed
@@ -118,22 +91,15 @@ def driver_control():
             else:
                 update_mode(FlywheelMode.STOPPED)
         
-        if current_flywheel_mode == FlywheelMode.LAUNCH:
-            nmtt.spin(FORWARD, 100, PERCENT)
-
-        elif current_flywheel_mode == FlywheelMode.EXPEL:
-            nmtt.spin(REVERSE, 50, PERCENT)
-
-        elif current_flywheel_mode == FlywheelMode.INTAKE:
-            nmtt.spin(FORWARD, 50, PERCENT)
-
-        elif current_flywheel_mode == FlywheelMode.STOPPED:
-            nmtt.stop(COAST)
-
-        # Update the temperature of the flywheel motor on the controller
-        if time.time() - current_time >= 3:
+        # Controller screen stuff so we know what state the robot is in
+        
+        # Update flywheel motor temperature every 5 seconds
+        if time.time() - current_time >= 5:
+            temp += 1
             controller.screen.clear_row(2)
             controller.screen.set_cursor(2, 0)
-            controller.screen.print("NMTT Temp: ", nmtt.temperature(TemperatureUnits.FAHRENHEIT))
+            controller.screen.print("NMTT Temp: ", temp)
 
             current_time = time.time()
+
+driver_control()
