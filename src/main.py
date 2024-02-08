@@ -18,6 +18,7 @@ brain=Brain()
 left_drive_smart = Motor(Ports.PORT1, GearSetting.RATIO_18_1, False)
 right_drive_smart = Motor(Ports.PORT10, GearSetting.RATIO_18_1, True)
 drivetrain_inertial = Inertial(Ports.PORT11)
+# drivetrain_inertial = Gps(Ports.PORT8)
 bidding = SmartDrive(left_drive_smart, right_drive_smart, drivetrain_inertial, 319.19, 320, 40, MM, 1)
 RoE = Controller(PRIMARY)
 
@@ -115,7 +116,7 @@ def rc_auto_loop_function_controller_1():
 remote_control_code_enabled = True
 
 rc_auto_loop_thread_controller_1 = Thread(rc_auto_loop_function_controller_1)
-
+#end region 
 
 ## Constants
 
@@ -132,7 +133,7 @@ FLYWHEEL_ARM_MOTOR = Ports.PORT4
 NMTT_PORT = Ports.PORT5
 
 IMU_SENSOR = Ports.PORT11
-GPS_SENSOR = Ports.PORT8
+GPS_SENSOR = Ports.PORT18
 
 # "Soft Enum" for the flywheel mode
 class FlywheelMode:
@@ -156,7 +157,7 @@ fly_arm = Motor(FLYWHEEL_ARM_MOTOR, GearSetting.RATIO_36_1)
 RoE = Controller() # Ruler of Everything
 current_flywheel_mode = FlywheelMode.STOPPED
 
-nmtt.set_stopping(COAST)
+nmtt.set_stopping(HOLD)
 nmtt.set_max_torque(100, PERCENT)
 fly_arm.set_stopping(HOLD)
 
@@ -214,18 +215,18 @@ def driver_control():
 
             else:
                 update_mode(FlywheelMode.STOPPED)
-        
+
         if current_flywheel_mode == FlywheelMode.LAUNCH:
-            nmtt.spin(FORWARD, 75, PERCENT)
+            nmtt.spin(FORWARD, 100, PERCENT)
 
         elif current_flywheel_mode == FlywheelMode.EXPEL:
-            nmtt.spin(REVERSE, 50, PERCENT)
+            nmtt.spin(REVERSE, 25, PERCENT)
 
         elif current_flywheel_mode == FlywheelMode.INTAKE:
-            nmtt.spin(FORWARD, 50, PERCENT)
+            nmtt.spin(FORWARD, 25, PERCENT)
 
         elif current_flywheel_mode == FlywheelMode.STOPPED:
-            nmtt.stop(COAST)
+            nmtt.stop(HOLD)
 
         else:
             # This should not be a thing that can happen
@@ -239,7 +240,7 @@ def driver_control():
             fly_arm.spin(REVERSE)
 
         else:
-            fly_arm.stop(BRAKE)
+            fly_arm.stop(HOLD)
 
         # Update the temperature of the flywheel motor on the controller every 3 seconds
         if time.time() - current_time >= 3:
@@ -249,9 +250,6 @@ def driver_control():
 
             current_time = time.time()
 
-def set_intake():
-    fly_arm.spin_to_position(60, DEGREES)
-
 def auto_defense():
     # Face the left side of the blue or red goal
     bidding.drive_for(24, INCHES)
@@ -260,12 +258,18 @@ def auto_defense():
     bidding.turn_for(RIGHT, 90, DEGREES)
 
     # Expel the triball into the goal, hopefully
-    nmtt.spin_for(REVERSE, 1, SECONDS)
+    fly_arm.spin_to_position(180, DEGREES, 80, PERCENT)
+    bidding.drive_for(FORWARD, 1, INCHES, 80, PERCENT)
 
-    # Turn around and grab a triball from the match load zone
-    bidding.turn_for(RIGHT, 180, DEGREES)
-    bidding.drive_for(FORWARD, 2, INCHES) # Make sure we're contacting the MLZ
-    nmtt.spin_for(FORWARD, 1, SECONDS) # Get triball from MLZ
+    # # Turn around and grab a triball from the match load zone
+    # bidding.turn_for(RIGHT, 180, DEGREES)
+    # bidding.drive_for(FORWARD, 2, INCHES) # Make sure we're contacting the MLZ
+    # nmtt.spin_for(FORWARD, 1, SECONDS) # Get triball from MLZ
+    
+    # Flip the flywheel arm around and grab a triball from the match load zone
+    bidding.drive_for(REVERSE, 3, INCHES, 70, PERCENT)
+    fly_arm.spin_to_position(1100, DEGREES) 
+    bidding.drive_for(FORWARD, 3, INCHES)
 
     # Move robot to elevation bars
     bidding.turn_for(LEFT, 45, DEGREES)
@@ -282,32 +286,56 @@ def auto_defense():
 
 
 def auto_offense():
+    fly_arm.set_velocity(80, PERCENT)
+    bidding.set_drive_velocity(80, PERCENT)
     # put triball into goal to line up to grab ball from neutral zone
-    bidding.drive_for(48, INCHES)        #moves 2 tiles toward the middle
+    bidding.drive_for(FORWARD, 42, INCHES)        #moves 2 tiles toward the middle
     bidding.turn_for(RIGHT, 90, DEGREES) #lines up to goal
     
-    #scores triball
-    nmtt.spin_for(REVERSE, 1, SECONDS)
-
-    #makes for certain the triball has gone into the goal
-    for i in range(2):
-        bidding.drive_for(FORWARD, 8, INCHES)
-        if i == 0:
-            bidding.drive_for(REVERSE, 8, INCHES)
-        else:
-            bidding.drive_for(REVERSE, 24, INCHES)
     
 
-selected_auto = auto_defense
+    #makes for certain the triball has gone into the goal
+    fly_arm.spin_for(FORWARD, 90, DEGREES)
+    bidding.drive_for(FORWARD, 12, INCHES)
+    bidding.drive_for(REVERSE, 25, INCHES)
+
+    #grabs a neutral triball and scores it for bonus
+    bidding.turn_for(LEFT, 90, DEGREES)
+    bidding.drive_for(FORWARD, 6, INCHES, 20, PERCENT)
+    fly_arm.spin_for(REVERSE, 90, DEGREES)
+    bidding.turn_for(RIGHT, 90, DEGREES)
+    fly_arm.spin_for(FORWARD, 90, DEGREES)
+    
+    bidding.drive_for(FORWARD, 24, INCHES)
+
+    #touches elevation bar
+    bidding.drive_for(REVERSE, 8, INCHES)
+    bidding.turn_for(RIGHT, 90, DEGREES, 50, PERCENT)
+    bidding.drive_for(FORWARD, 42, INCHES)
+    bidding.turn_for(RIGHT, 90, DEGREES, 50, PERCENT)
+    bidding.drive_for(FORWARD, 36, INCHES)
+    
+
+
+    
+
+
+
+
+    
+    
+    
+    
+
+selected_auto = auto_offense
 chosen = False
 
 def start_competition():
 # Register change_flywheel_mode to the B button
     RoE.buttonB.pressed(change_flywheel_mode)
-    RoE.buttonY.pressed(set_intake)
     RoE.buttonA.pressed(lambda: print("Hello"))
 
-    Competition(driver_control, auto_defense)
+    Competition(driver_control, selected_auto)
 
 
 def auto_selector():
@@ -347,5 +375,5 @@ def auto_selector():
     RoE.buttonA.pressed(submit)
 
 
-auto_selector()
-# start_competition()
+# auto_selector()
+start_competition()
