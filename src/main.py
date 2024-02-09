@@ -148,9 +148,10 @@ fly_arm = Motor(FLYWHEEL_ARM_MOTOR, GearSetting.RATIO_36_1)
 RoE = Controller() # Ruler of Everything
 current_flywheel_mode = FlywheelMode.STOPPED
 
-nmtt.set_stopping(HOLD)
+nmtt.set_stopping(COAST)
 nmtt.set_max_torque(100, PERCENT)
 fly_arm.set_stopping(HOLD)
+bidding.set_turn_constant(2)
 
 def update_mode(new_mode):
     """
@@ -211,13 +212,13 @@ def driver_control():
             nmtt.spin(FORWARD, 100, PERCENT)
 
         elif current_flywheel_mode == FlywheelMode.EXPEL:
-            nmtt.spin(REVERSE, 25, PERCENT)
+            nmtt.spin(REVERSE, 100, PERCENT)
 
         elif current_flywheel_mode == FlywheelMode.INTAKE:
             nmtt.spin(FORWARD, 25, PERCENT)
 
         elif current_flywheel_mode == FlywheelMode.STOPPED:
-            nmtt.stop(HOLD)
+            nmtt.stop(COAST)
 
         else:
             # This should not be a thing that can happen
@@ -270,7 +271,6 @@ def auto_defense():
     bidding.turn_for(LEFT, 45, DEGREES)
     bidding.drive_for(FORWARD, 50, INCHES)
 
-
 def auto_offense():
     """
     The autonomous routine for the offensive side.
@@ -287,11 +287,12 @@ def auto_offense():
     #makes for certain the triball has gone into the goal
     fly_arm.spin_for(FORWARD, 90, DEGREES)
     bidding.drive_for(FORWARD, 12, INCHES)
-    bidding.drive_for(REVERSE, 25, INCHES)
+    bidding.turn_for(LEFT, 5, DEGREES) # Make it give some way for the triball
+    bidding.drive_for(REVERSE, 23, INCHES)
 
     #grabs a neutral triball and scores it for bonus
-    bidding.turn_for(LEFT, 90, DEGREES)
-    bidding.drive_for(FORWARD, 5, INCHES)
+    bidding.turn_for(LEFT, 85, DEGREES)
+    bidding.drive_for(FORWARD, 4, INCHES)
     fly_arm.spin_for(REVERSE, 90, DEGREES)
     bidding.turn_for(RIGHT, 90, DEGREES)
     fly_arm.spin_for(FORWARD, 90, DEGREES)
@@ -299,15 +300,15 @@ def auto_offense():
     bidding.drive_for(FORWARD, 24, INCHES)
 
     #touches elevation bar
+    fly_arm.spin_to_position(300, DEGREES, wait=False)
     bidding.drive_for(REVERSE, 8, INCHES)
     bidding.turn_for(RIGHT, 90, DEGREES)
-    bidding.drive_for(FORWARD, 42, INCHES)
+    bidding.drive_for(FORWARD, 50, INCHES)
     bidding.turn_for(RIGHT, 90, DEGREES)
     bidding.drive_for(FORWARD, 36, INCHES)
     
 
-
-selected_auto = auto_defense
+selected_auto = auto_offense
 chosen = False
 
 def start_competition():
