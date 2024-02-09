@@ -142,15 +142,6 @@ class FlywheelMode:
     INTAKE = "INTAKE"
     EXPEL = "EXPEL"
 
-bidding = SmartDrive(
-    Motor(BACK_LEFT_DRIVE_MOTOR), # Motor 1
-    Motor(BACK_RIGHT_DRIVE_MOTOR), # Motor 2
-    Inertial(IMU_SENSOR), # Gyro sensor (IMU)
-    WHEEL_TRAVEL, # Wheel travel
-    TRACK_WIDTH, # Track width
-    WHEEL_BASE, # Wheel base
-    MM, # Units
-)
 nmtt = Motor(NMTT_PORT, GearSetting.RATIO_6_1, True) # Never Meant to Throw
 fly_arm = Motor(FLYWHEEL_ARM_MOTOR, GearSetting.RATIO_36_1)
 
@@ -251,45 +242,44 @@ def driver_control():
             current_time = time.time()
 
 def auto_defense():
-    # Face the left side of the blue or red goal
-    bidding.drive_for(24, INCHES)
-    bidding.turn_for(LEFT, 90, DEGREES)
-    bidding.drive_for(12, INCHES)
-    bidding.turn_for(RIGHT, 90, DEGREES)
+    """
+    The defensive autonomous routine for the competition
+    Authored by @WhoIsConch
+    """
+    bidding.set_drive_velocity(80, PERCENT)
+
+    # Go diagonal to the goal
+    bidding.turn_for(LEFT, 45, DEGREES)
+    bidding.drive_for(FORWARD, 34, INCHES)
+    fly_arm.spin_to_position(300, DEGREES, wait=False)
+    bidding.turn_for(RIGHT, 45, DEGREES)
 
     # Expel the triball into the goal, hopefully
-    fly_arm.spin_to_position(180, DEGREES, 80, PERCENT)
-    bidding.drive_for(FORWARD, 1, INCHES, 80, PERCENT)
-
-    # # Turn around and grab a triball from the match load zone
-    # bidding.turn_for(RIGHT, 180, DEGREES)
-    # bidding.drive_for(FORWARD, 2, INCHES) # Make sure we're contacting the MLZ
-    # nmtt.spin_for(FORWARD, 1, SECONDS) # Get triball from MLZ
+    bidding.drive_for(FORWARD, 12, INCHES)
     
-    # Flip the flywheel arm around and grab a triball from the match load zone
-    bidding.drive_for(REVERSE, 3, INCHES, 70, PERCENT)
+    # Flip the flywheel arm around and remove a triball from the match load zone
+    bidding.drive_for(REVERSE, 24, INCHES)
     fly_arm.spin_to_position(1100, DEGREES) 
-    bidding.drive_for(FORWARD, 3, INCHES)
+    bidding.drive_for(FORWARD, 1, INCHES)
+    bidding.turn_for(RIGHT, 135, DEGREES, 100, PERCENT)
+    wait(100, MSEC)
 
     # Move robot to elevation bars
+    fly_arm.spin_to_position(550, DEGREES, 80, PERCENT, wait=False)
+    bidding.drive_for(FORWARD, 3, INCHES, 60, PERCENT)
     bidding.turn_for(LEFT, 45, DEGREES)
-    bidding.drive_for(FORWARD, 24, INCHES)
-    bidding.turn_for(LEFT, 45, DEGREES)
-    bidding.drive_for(FORWARD, 24, INCHES)
-
-    # Expel the loaded triball
-    nmtt.spin_for(REVERSE, 1, SECONDS)
-
-    # Elevate the flywheel arm
-    fly_arm.spin_to_position(405, DEGREES)
-    bidding.drive_for(FORWARD, 2, INCHES) # Touch the elevation bar
+    bidding.drive_for(FORWARD, 50, INCHES)
 
 
 def auto_offense():
+    """
+    The autonomous routine for the offensive side.
+    Authored by @ZaneZimmermanCCTI
+    """
     fly_arm.set_velocity(80, PERCENT)
     bidding.set_drive_velocity(80, PERCENT)
     # put triball into goal to line up to grab ball from neutral zone
-    bidding.drive_for(FORWARD, 42, INCHES)        #moves 2 tiles toward the middle
+    bidding.drive_for(FORWARD, 45, INCHES)        #moves 2 tiles toward the middle
     bidding.turn_for(RIGHT, 90, DEGREES) #lines up to goal
     
     
@@ -301,7 +291,7 @@ def auto_offense():
 
     #grabs a neutral triball and scores it for bonus
     bidding.turn_for(LEFT, 90, DEGREES)
-    bidding.drive_for(FORWARD, 6, INCHES, 20, PERCENT)
+    bidding.drive_for(FORWARD, 5, INCHES)
     fly_arm.spin_for(REVERSE, 90, DEGREES)
     bidding.turn_for(RIGHT, 90, DEGREES)
     fly_arm.spin_for(FORWARD, 90, DEGREES)
@@ -310,24 +300,14 @@ def auto_offense():
 
     #touches elevation bar
     bidding.drive_for(REVERSE, 8, INCHES)
-    bidding.turn_for(RIGHT, 90, DEGREES, 50, PERCENT)
+    bidding.turn_for(RIGHT, 90, DEGREES)
     bidding.drive_for(FORWARD, 42, INCHES)
-    bidding.turn_for(RIGHT, 90, DEGREES, 50, PERCENT)
+    bidding.turn_for(RIGHT, 90, DEGREES)
     bidding.drive_for(FORWARD, 36, INCHES)
     
 
 
-    
-
-
-
-
-    
-    
-    
-    
-
-selected_auto = auto_offense
+selected_auto = auto_defense
 chosen = False
 
 def start_competition():
